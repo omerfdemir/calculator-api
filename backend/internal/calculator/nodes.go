@@ -74,13 +74,22 @@ func (n *binaryNode) eval() (float64, error) {
 	return finite(n.op.apply(left, right))
 }
 
-// isPercentOfLeft reports whether the right operand of + or − is directly a % term.
+// isPercentOfLeft reports whether the right operand of + or − is directly a
+// % term, with or without unary minus signs before it (80 + −15%).
 func (n *binaryNode) isPercentOfLeft() bool {
 	if n.op.Name != "add" && n.op.Name != "subtract" {
 		return false
 	}
-	right, ok := n.right.(*unaryNode)
-	return ok && right.op.Name == "percentage"
+	right := n.right
+	for {
+		negate, ok := right.(*negateNode)
+		if !ok {
+			break
+		}
+		right = negate.operand
+	}
+	percent, ok := right.(*unaryNode)
+	return ok && percent.op.Name == "percentage"
 }
 
 func (n *binaryNode) String() string {

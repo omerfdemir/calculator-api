@@ -124,8 +124,8 @@ There are 4 test levels. Each level tests through a public seam, as [SPEC.md](SP
 
 | Level | Seam | Command | Tests |
 |---|---|---|---|
-| Backend HTTP API | Real HTTP requests to the full router with `httptest` | `make test-backend` | 13 tests with 54 table rows |
-| Calculator module | The public `Evaluate` function and the registry list | `make test-backend` | 5 tests with 89 table rows |
+| Backend HTTP API | Real HTTP requests to the full router with `httptest` | `make test-backend` | 13 tests with 55 table rows |
+| Calculator module | The public `Evaluate` function and the registry list | `make test-backend` | 5 tests with 94 table rows |
 | Server entry point | `run` with a real server and the `healthcheck` subcommand | `make test-backend` | 4 tests |
 | Frontend | The full rendered app with MSW at the network boundary | `make test-frontend` | 64 tests |
 | End-to-end | Playwright against the Compose stack, with no mocks | `make up`, then `make e2e` | 23 tests |
@@ -242,7 +242,7 @@ docker compose exec web wget -qO- http://api:8080/healthz
 | `×` and `÷` come before `+` and `−`. | `2 + 3 × 4 = 14` |
 | `^` comes before unary minus and `√`, and is right-associative. | `−2 ^ 2 = −4`, `2 ^ 3 ^ 2 = 512` |
 | `x%` is `x ÷ 100`. | `50% = 0.5`, `15% × 80 = 12` |
-| After `+` or `−`, a `%` term is a percentage of the left value. | `80 + 15% = 92`, `80 − 15% = 68` |
+| After `+` or `−`, a `%` term is a percentage of the left value, also with a unary minus. Brackets stop the rule. | `80 + 15% = 92`, `80 − 15% = 68`, `80 + −15% = 68`, `80 + (−15%) = 79.85` |
 | Numbers can be negative, decimal or in exponent notation. | `−1.5`, `.5`, `1e6`, `2.5e-3` |
 | Implicit multiplication is not allowed. | `2(3)` gives `INVALID_EXPRESSION` |
 | An expression has 200 characters at most, and a bracket depth of 32 at most. | |

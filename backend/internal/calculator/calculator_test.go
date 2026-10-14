@@ -87,6 +87,11 @@ func TestEvaluate(t *testing.T) {
 		{"add a percent twice", "100+10%+10%", 121, "100 + 10% + 10%"},
 		{"percent term is not direct", "200+10%×2", 200.2, "200 + 10% × 2"},
 		{"bracketed percent is not direct", "80+(15%)", 80.15, "80 + (15%)"},
+		{"add a negative percent", "80+−15%", 68, "80 + −15%"},
+		{"subtract a negative percent", "80−−15%", 92, "80 − −15%"},
+		{"add a double negative percent", "80+−−15%", 92, "80 + −−15%"},
+		{"bracketed negative percent is not direct", "80+(−15%)", 79.85, "80 + (−15%)"},
+		{"negative percent alone", "−15%", -0.15, "−15%"},
 		{"percent before power", "50%^2", 0.25, "50% ^ 2"},
 		{"percent of a large number", "1e308+50%", 1.5e308, ""},
 

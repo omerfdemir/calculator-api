@@ -128,6 +128,7 @@ func TestCalculate(t *testing.T) {
 		{"sqrt", `{"expression":"√9"}`, `{"expression":"√9","result":3}`},
 		{"percentage", `{"expression":"15%×80"}`, `{"expression":"15% × 80","result":12}`},
 		{"phone percentage", `{"expression":"80+15%"}`, `{"expression":"80 + 15%","result":92}`},
+		{"phone percentage after unary minus", `{"expression":"80+-15%"}`, `{"expression":"80 + −15%","result":68}`},
 		{"precedence", `{"expression":"2+3*4"}`, `{"expression":"2 + 3 × 4","result":14}`},
 		{"brackets", `{"expression":"(2+3)*4"}`, `{"expression":"(2 + 3) × 4","result":20}`},
 		{"negative and decimal", `{"expression":"-1.5*2"}`, `{"expression":"−1.5 × 2","result":-3}`},

@@ -145,11 +145,14 @@ These rules apply to all operations:
 - Brackets `(` and `)` change the order of operations.
 - The API also accepts the ASCII symbols `*` for `×`, `/` for `÷` and `-` for `−`.
 - Spaces are allowed between tokens and have no meaning.
-- **Phone percentage rule.** `x%` is `x ÷ 100`. There is 1 exception: when the right operand of `+` or `−` is directly a `%` term, the percentage is of the left operand. So `a + b%` is `a + a × b ÷ 100`.
+- **Phone percentage rule.** `x%` is `x ÷ 100`. There is 1 exception: when the right operand of `+` or `−` is directly a `%` term, the percentage is of the left operand. So `a + b%` is `a + a × b ÷ 100`. Unary minus signs before the `%` term do not stop the rule, so `a + −b%` is `a − a × b ÷ 100`. Brackets stop the rule.
   - `50% = 0.5`
   - `15% × 80 = 12`
   - `80 + 15% = 92`
   - `80 − 15% = 68`
+  - `80 + −15% = 68`
+  - `80 − −15% = 92`
+  - `80 + (−15%) = 79.85` (brackets: the right operand is not directly a `%` term)
   - `100 + 10% + 10% = 121`
   - `200 + 10% × 2 = 200.2` (the right operand of `+` is `10% × 2`, not a `%` term)
 - These are not allowed and give `INVALID_EXPRESSION`: implicit multiplication (`2(3)`, `2√9`), an empty expression, an unknown character, a missing operand, a bracket without a pair, and empty brackets `()`.
