@@ -6,7 +6,7 @@ The source of truth for behavior, the API contract and the tests is [SPEC.md](SP
 
 ## 1. Overview
 
-![The calculator in dark mode, with a result and the history](docs/screenshot.png)
+![The calculator in dark mode: 1 ÷ 3, then × 3, gives 1, and the history shows 80 + −15% = 68](docs/screenshot.png)
 
 - 7 operations: add, subtract, multiply, divide, power, square root and percentage.
 - Expressions with more than 1 operator and with brackets, for example `(2 + 3) × 4 − 6 ÷ 3 = 18`.

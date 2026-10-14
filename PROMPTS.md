@@ -171,3 +171,27 @@ And also make PROMPT.md with my first prompt and in addition to these and also o
 ```
 
 Result: `SPEC.md` got multi-operator expressions, brackets, a phone-style keypad, the phone percentage rule and 1 expression endpoint. This file was created.
+
+## 4. Review the code before sharing
+
+```text
+Make repo public. /engineering:code-review review the calculator-api main branch before I share it
+```
+
+Result: the repository became public and CI passed. The review found no critical issues and listed 8 smaller items.
+
+## 5. Fix review items 1, 2 and 3
+
+```text
+Fix review items 1, 2 and 3 test-first: make `make check` run `make down` when `make up` fails, reject JSON keys that are not exactly `expression` (other case or duplicate) with INVALID_REQUEST, and set `Vary: Origin` on every response. 1 commit each, then push and check CI.
+```
+
+Result: 3 test-first commits. `make check` stops the stack after a failed `make up`, the API rejects other or duplicate JSON keys, and every response has `Vary: Origin`. CI passed.
+
+## 6. Fix review items 4, 6 and 7
+
+```text
+For review items 4, 6 and 7: add a JSON NOT_FOUND 404, make 80 + −15% follow the phone rule, and keep the full result when continuing after =. Update SPEC.md in the same commits, test first, then push and check CI.
+```
+
+Result: 3 test-first commits with SPEC.md changes. An unknown path returns `NOT_FOUND`, `80 + −15% = 68`, and `1 ÷ 3`, then `× 3`, gives `1`. CI passed.
