@@ -51,16 +51,18 @@ func recoverPanics(logger *slog.Logger, next http.Handler) http.Handler {
 }
 
 // cors allows the listed origins. A preflight request from an allowed origin
-// gets a 204 response.
+// gets a 204 response. Every response has Vary: Origin, because the CORS
+// headers depend on the Origin header. So a shared cache does not give a
+// response for 1 origin to another origin.
 func cors(allowed []string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Vary", "Origin")
 		origin := r.Header.Get("Origin")
 		if origin == "" || !slices.Contains(allowed, origin) {
 			next.ServeHTTP(w, r)
 			return
 		}
 		w.Header().Set("Access-Control-Allow-Origin", origin)
-		w.Header().Add("Vary", "Origin")
 		if r.Method == http.MethodOptions && r.Header.Get("Access-Control-Request-Method") != "" {
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")

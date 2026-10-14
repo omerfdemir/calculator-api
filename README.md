@@ -124,7 +124,7 @@ There are 4 test levels. Each level tests through a public seam, as [SPEC.md](SP
 
 | Level | Seam | Command | Tests |
 |---|---|---|---|
-| Backend HTTP API | Real HTTP requests to the full router with `httptest` | `make test-backend` | 12 tests with 49 table rows |
+| Backend HTTP API | Real HTTP requests to the full router with `httptest` | `make test-backend` | 12 tests with 50 table rows |
 | Calculator module | The public `Evaluate` function and the registry list | `make test-backend` | 5 tests with 89 table rows |
 | Server entry point | `run` with a real server and the `healthcheck` subcommand | `make test-backend` | 4 tests |
 | Frontend | The full rendered app with MSW at the network boundary | `make test-frontend` | 62 tests |

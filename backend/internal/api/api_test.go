@@ -272,9 +272,7 @@ func TestCORS(t *testing.T) {
 		if got := rec.Header().Get("Access-Control-Allow-Origin"); got != devOrigin {
 			t.Errorf("Access-Control-Allow-Origin = %q, want %q", got, devOrigin)
 		}
-		if got := rec.Header().Get("Vary"); got != "Origin" {
-			t.Errorf("Vary = %q, want Origin", got)
-		}
+		assertVaryOrigin(t, rec)
 	})
 
 	t.Run("other origin", func(t *testing.T) {
@@ -285,6 +283,12 @@ func TestCORS(t *testing.T) {
 		if got := rec.Header().Get("Access-Control-Allow-Origin"); got != "" {
 			t.Errorf("Access-Control-Allow-Origin = %q, want no header", got)
 		}
+		assertVaryOrigin(t, rec)
+	})
+
+	t.Run("no origin", func(t *testing.T) {
+		rec := send(t, h, request{method: http.MethodGet, path: "/healthz"})
+		assertVaryOrigin(t, rec)
 	})
 
 	t.Run("preflight", func(t *testing.T) {
@@ -316,6 +320,15 @@ func TestCORS(t *testing.T) {
 			t.Errorf("Access-Control-Allow-Origin = %q, want no header", got)
 		}
 	})
+}
+
+// assertVaryOrigin checks that the response has exactly 1 Vary: Origin. A
+// shared cache must not give a response for 1 origin to another origin.
+func assertVaryOrigin(t *testing.T, rec *httptest.ResponseRecorder) {
+	t.Helper()
+	if got := rec.Header().Values("Vary"); len(got) != 1 || got[0] != "Origin" {
+		t.Errorf("Vary = %q, want [Origin]", got)
+	}
 }
 
 func TestPanicRecovery(t *testing.T) {
