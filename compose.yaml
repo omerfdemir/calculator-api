@@ -1,0 +1,39 @@
+name: calculator
+
+services:
+  api:
+    build: ./backend
+    environment:
+      PORT: "8080"
+    # Internal only: no published port. All requests go through nginx.
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD", "/server", "healthcheck"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+    networks:
+      - calculator
+
+  web:
+    build: ./frontend
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+    networks:
+      - calculator
+
+networks:
+  calculator: {}
