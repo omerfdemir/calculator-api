@@ -1,0 +1,237 @@
+:root {
+  --bg: #f4f4f5;
+  --surface: #ffffff;
+  --text: #18181b;
+  --text-muted: #52525b;
+  --key: #e4e4e7;
+  --key-text: #18181b;
+  --key-function: #a1a1aa;
+  --key-function-text: #09090b;
+  --key-operation: #f59e0b;
+  --key-operation-text: #09090b;
+  --key-equals: #1d4ed8;
+  --key-equals-text: #ffffff;
+  --error-bg: #fef2f2;
+  --error-text: #991b1b;
+  --focus: #2563eb;
+  --radius: 14px;
+  --gap: 10px;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #09090b;
+    --surface: #18181b;
+    --text: #fafafa;
+    --text-muted: #a1a1aa;
+    --key: #3f3f46;
+    --key-text: #fafafa;
+    --key-function: #a1a1aa;
+    --key-function-text: #09090b;
+    --key-equals: #3b82f6;
+    --key-equals-text: #09090b;
+    --error-bg: #450a0a;
+    --error-text: #fecaca;
+    --focus: #60a5fa;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  -webkit-text-size-adjust: 100%;
+}
+
+.app {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+h1 {
+  margin: 0 0 12px;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.calculator {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  background: var(--surface);
+  border-radius: calc(var(--radius) + 6px);
+}
+
+.display {
+  display: grid;
+  gap: 4px;
+  text-align: right;
+}
+
+.display-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-align: left;
+}
+
+.display-input {
+  width: 100%;
+  min-width: 0;
+  padding: 8px 0;
+  border: 0;
+  border-bottom: 2px solid var(--key);
+  background: transparent;
+  color: var(--text);
+  font: 500 2rem/1.2 var(--font);
+  text-align: right;
+}
+
+.display-input:focus-visible {
+  outline: none;
+  border-bottom-color: var(--focus);
+}
+
+.display-result {
+  min-height: 1.5em;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  overflow-wrap: anywhere;
+}
+
+.error {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--error-bg);
+  color: var(--error-text);
+}
+
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--gap);
+}
+
+.key {
+  min-height: 56px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--key);
+  color: var(--key-text);
+  font: 500 1.4rem var(--font);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.key:active {
+  filter: brightness(0.85);
+}
+
+.key:focus-visible,
+.retry:focus-visible,
+.link-button:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.key-function {
+  background: var(--key-function);
+  color: var(--key-function-text);
+}
+
+.key-operation {
+  background: var(--key-operation);
+  color: var(--key-operation-text);
+}
+
+.key-equals {
+  background: var(--key-equals);
+  color: var(--key-equals-text);
+}
+
+.key:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+.key-empty {
+  min-height: 56px;
+}
+
+.loading {
+  color: var(--text-muted);
+}
+
+.load-error {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+}
+
+.retry {
+  padding: 10px 18px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--key-equals);
+  color: var(--key-equals-text);
+  font: 600 1rem var(--font);
+  cursor: pointer;
+}
+
+.history {
+  margin-top: 16px;
+}
+
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.history h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.link-button {
+  padding: 8px;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.history-list {
+  margin: 8px 0 0;
+  padding-left: 1.5em;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.history-list li {
+  padding: 4px 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .key {
+    transition: filter 80ms ease-out;
+  }
+}
