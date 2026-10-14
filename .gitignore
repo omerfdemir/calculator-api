@@ -1,0 +1,18 @@
+# OS and editors
+.DS_Store
+.idea/
+.vscode/
+
+# Node
+node_modules/
+dist/
+
+# Test output
+coverage/
+playwright-report/
+test-results/
+blob-report/
+*.out
+
+# Backend build output
+backend/bin/
