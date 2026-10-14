@@ -6,7 +6,8 @@
   "scripts": {
     "test": "playwright test",
     "lint": "tsc --noEmit && prettier --check .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "screenshot": "SCREENSHOT=1 playwright test screenshot"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",
