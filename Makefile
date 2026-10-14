@@ -5,12 +5,13 @@ BACKEND  := backend
 FRONTEND := frontend
 E2E      := e2e
 COVERAGE := coverage
+COMPOSE  ?= docker compose
 
 # Minimum statement coverage of the calculator and API modules.
 BACKEND_COVERAGE_MIN := 90
 
 .PHONY: help install run-backend run-frontend test test-backend test-frontend \
-	lint lint-backend lint-frontend lint-e2e coverage coverage-backend coverage-frontend \
+	test-make lint lint-backend lint-frontend lint-e2e coverage coverage-backend coverage-frontend \
 	up down logs e2e check
 
 help: ## Show the targets.
@@ -32,13 +33,16 @@ run-backend: ## Run the API on port 8080.
 run-frontend: $(FRONTEND)/node_modules ## Run the Vite dev server (proxies /api to port 8080).
 	cd $(FRONTEND) && npm run dev
 
-test: test-backend test-frontend ## Run the backend and frontend tests.
+test: test-backend test-frontend test-make ## Run the backend, frontend and Makefile tests.
 
 test-backend:
 	cd $(BACKEND) && go test -race -cover ./...
 
 test-frontend: $(FRONTEND)/node_modules
 	cd $(FRONTEND) && npm test
+
+test-make:
+	./scripts/test-make-check.sh
 
 lint: lint-backend lint-frontend lint-e2e ## Run all linters and type checks.
 
@@ -70,18 +74,18 @@ coverage-frontend: $(FRONTEND)/node_modules
 	cd $(FRONTEND) && npm test -- --coverage
 
 up: ## Build and start the Compose stack, and wait until it is healthy.
-	docker compose up --build -d --wait
+	$(COMPOSE) up --build -d --wait
 
 down: ## Stop the Compose stack.
-	docker compose down
+	$(COMPOSE) down
 
 logs: ## Show the Compose logs.
-	docker compose logs
+	$(COMPOSE) logs
 
 e2e: $(E2E)/node_modules ## Run the Playwright tests against the running stack (make up first).
 	cd $(E2E) && npx playwright install chromium && npm test
 
 check: lint test ## Run lint, tests, the stack and the end-to-end tests.
-	$(MAKE) up
+	$(MAKE) up || { status=$$?; $(MAKE) logs; $(MAKE) down; exit $$status; }
 	$(MAKE) e2e || { status=$$?; $(MAKE) logs; $(MAKE) down; exit $$status; }
 	$(MAKE) down

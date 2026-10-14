@@ -135,7 +135,7 @@ Other commands:
 | Command | What it does |
 |---|---|
 | `make lint` | `go vet`, `golangci-lint`, ESLint, Prettier and the TypeScript type checks. |
-| `make test` | The backend and frontend tests. The backend tests use the race detector. |
+| `make test` | The backend tests (with the race detector), the frontend tests, and a test that `make check` stops the stack when `make up` fails. |
 | `make coverage` | The HTML and text coverage reports in `coverage/backend/` and `coverage/frontend/`. It fails if the backend coverage is below 90% or the frontend line coverage is below 85%. |
 | `make e2e` | The Playwright tests. The stack must run (`make up`). The HTML report is in `e2e/playwright-report/`. |
 | `make check` | Lint, tests, `make up`, `make e2e` and `make down`. It prints the Compose logs if the end-to-end tests fail. |
