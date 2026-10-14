@@ -31,6 +31,15 @@ describe("API client", () => {
     await expect(calculate("2+3")).resolves.toEqual({ ok: false, code: "INTERNAL_ERROR" });
   });
 
+  it("returns NOT_FOUND for a 404 error", async () => {
+    server.use(
+      http.post(calculateUrl, () =>
+        HttpResponse.json({ error: { code: "NOT_FOUND", message: "x" } }, { status: 404 }),
+      ),
+    );
+    await expect(calculate("2+3")).resolves.toEqual({ ok: false, code: "NOT_FOUND" });
+  });
+
   it("returns INTERNAL_ERROR for an operations list with the wrong shape", async () => {
     server.use(http.get(operationsUrl, () => HttpResponse.json({ operations: [{ name: 1 }] })));
     await expect(fetchOperations()).resolves.toEqual({ ok: false, code: "INTERNAL_ERROR" });

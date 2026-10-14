@@ -195,6 +195,14 @@ test.describe("nginx", () => {
     ]);
   });
 
+  test("an unknown API path returns the JSON NOT_FOUND error", async ({ request }) => {
+    const response = await request.get("/api/v1/unknown");
+    expect(response.status()).toBe(404);
+    expect(response.headers()["content-type"]).toBe("application/json");
+    const body = (await response.json()) as { error: { code: string } };
+    expect(body.error.code).toBe("NOT_FOUND");
+  });
+
   test("sets the security and cache headers", async ({ request }) => {
     const response = await request.get("/");
     const headers = response.headers();

@@ -268,6 +268,7 @@ describe("error messages", () => {
     ["INVALID_DOMAIN", 422, "The input is outside the domain of the operation"],
     ["RESULT_OUT_OF_RANGE", 422, "The result is too large"],
     ["METHOD_NOT_ALLOWED", 405, "Something went wrong"],
+    ["NOT_FOUND", 404, "Something went wrong"],
     ["INTERNAL_ERROR", 500, "Something went wrong"],
   ])("%s shows the correct message", async (code, status, message) => {
     server.use(

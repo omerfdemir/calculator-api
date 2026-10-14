@@ -204,6 +204,7 @@ The list order is fixed. It is the order of the operations table.
 | Division by zero | 422 | `DIVISION_BY_ZERO` |
 | Input is outside the domain of the operation | 422 | `INVALID_DOMAIN` |
 | A value overflows to infinity | 422 | `RESULT_OUT_OF_RANGE` |
+| Unknown path | 404 | `NOT_FOUND` |
 | Wrong HTTP method | 405 | `METHOD_NOT_ALLOWED` |
 | Unexpected panic | 500 | `INTERNAL_ERROR` (the response never shows internal details) |
 
@@ -329,7 +330,7 @@ There are 4 seams. Each seam has a different job.
    - A keyboard-only flow.
    - A mobile viewport (360 × 800) has no horizontal scroll, and the main flow works.
    - An accessibility scan with `@axe-core/playwright` finds no serious or critical violations.
-   - nginx: a page reload on a deep link (for example `/unknown/path`) shows the app, and a request to `/api/v1/operations` through nginx returns the operations list.
+   - nginx: a page reload on a deep link (for example `/unknown/path`) shows the app, a request to `/api/v1/operations` through nginx returns the operations list, and an unknown API path (for example `/api/v1/unknown`) returns the JSON `NOT_FOUND` error.
 
 ### Coverage targets
 

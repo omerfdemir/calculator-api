@@ -26,6 +26,7 @@ export function errorMessage(code: MessageCode, position?: number): string {
       return "The result is too large to show.";
     case "NETWORK_ERROR":
       return "The server is not available. Check your connection and try again.";
+    case "NOT_FOUND":
     case "METHOD_NOT_ALLOWED":
     case "INTERNAL_ERROR":
       return somethingWentWrong;

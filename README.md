@@ -124,11 +124,11 @@ There are 4 test levels. Each level tests through a public seam, as [SPEC.md](SP
 
 | Level | Seam | Command | Tests |
 |---|---|---|---|
-| Backend HTTP API | Real HTTP requests to the full router with `httptest` | `make test-backend` | 12 tests with 50 table rows |
+| Backend HTTP API | Real HTTP requests to the full router with `httptest` | `make test-backend` | 13 tests with 54 table rows |
 | Calculator module | The public `Evaluate` function and the registry list | `make test-backend` | 5 tests with 89 table rows |
 | Server entry point | `run` with a real server and the `healthcheck` subcommand | `make test-backend` | 4 tests |
-| Frontend | The full rendered app with MSW at the network boundary | `make test-frontend` | 62 tests |
-| End-to-end | Playwright against the Compose stack, with no mocks | `make up`, then `make e2e` | 22 tests |
+| Frontend | The full rendered app with MSW at the network boundary | `make test-frontend` | 64 tests |
+| End-to-end | Playwright against the Compose stack, with no mocks | `make up`, then `make e2e` | 23 tests |
 
 Other commands:
 
@@ -149,7 +149,7 @@ These are the real numbers from `make coverage`.
 | Part | Statements | Branches | Functions | Lines | Target |
 |---|---|---|---|---|---|
 | Backend: calculator module | 99.5% | – | – | – | 90% of statements |
-| Backend: API module | 97.3% | – | – | – | 90% of statements |
+| Backend: API module | 97.4% | – | – | – | 90% of statements |
 | Backend: calculator and API together | 98.7% | – | – | – | 90% of statements |
 | Backend: server entry point | 76.0% | – | – | – | none |
 | Frontend: all files | 97.22% | 93.27% | 100% | 100% | 85% of lines |
@@ -199,6 +199,7 @@ Each error response has a stable `code`. The `message` text can change. An `INVA
 | `DIVISION_BY_ZERO` | 422 | `{"expression":"1/0"}` | `{"error":{"code":"DIVISION_BY_ZERO","message":"cannot divide by zero"}}` |
 | `INVALID_DOMAIN` | 422 | `{"expression":"√-1"}` | `{"error":{"code":"INVALID_DOMAIN","message":"input is outside the domain of the operation"}}` |
 | `RESULT_OUT_OF_RANGE` | 422 | `{"expression":"1e308*10"}` | `{"error":{"code":"RESULT_OUT_OF_RANGE","message":"result is out of range"}}` |
+| `NOT_FOUND` | 404 | `curl localhost:8080/api/v1/unknown` | `{"error":{"code":"NOT_FOUND","message":"the path does not exist"}}` |
 | `METHOD_NOT_ALLOWED` | 405 | `curl -X GET localhost:8080/api/v1/calculate` | `{"error":{"code":"METHOD_NOT_ALLOWED","message":"the method is not allowed"}}` |
 | `INTERNAL_ERROR` | 500 | Only after an unexpected panic. A request cannot cause it. The tests cause it with a fake evaluator. | `{"error":{"code":"INTERNAL_ERROR","message":"an internal error occurred"}}` |
 

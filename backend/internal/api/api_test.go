@@ -243,6 +243,26 @@ func TestMethodNotAllowed(t *testing.T) {
 	}
 }
 
+func TestNotFound(t *testing.T) {
+	tests := []struct {
+		method string
+		path   string
+	}{
+		{http.MethodGet, "/api/v1/unknown"},
+		{http.MethodPost, "/api/v2/calculate"},
+		{http.MethodGet, "/"},
+		{http.MethodGet, "/healthz/extra"},
+	}
+
+	h := newHandler(t)
+	for _, tt := range tests {
+		t.Run(tt.method+" "+tt.path, func(t *testing.T) {
+			rec := send(t, h, request{method: tt.method, path: tt.path})
+			assertError(t, rec, http.StatusNotFound, "NOT_FOUND", nil)
+		})
+	}
+}
+
 func TestOperations(t *testing.T) {
 	rec := send(t, newHandler(t), request{method: http.MethodGet, path: "/api/v1/operations"})
 	assertOK(t, rec, `{"operations":[

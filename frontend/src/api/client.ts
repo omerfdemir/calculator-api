@@ -6,6 +6,7 @@ const apiErrorCodes = [
   "DIVISION_BY_ZERO",
   "INVALID_DOMAIN",
   "RESULT_OUT_OF_RANGE",
+  "NOT_FOUND",
   "METHOD_NOT_ALLOWED",
   "INTERNAL_ERROR",
 ] as const;

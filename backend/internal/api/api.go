@@ -40,6 +40,7 @@ func NewHandler(cfg Config) http.Handler {
 	mux.HandleFunc("/api/v1/operations", methodNotAllowed("GET, HEAD"))
 	mux.HandleFunc("GET /healthz", h.healthz)
 	mux.HandleFunc("/healthz", methodNotAllowed("GET, HEAD"))
+	mux.HandleFunc("/", notFound)
 
 	return logRequests(cfg.Logger,
 		cors(cfg.AllowedOrigins,

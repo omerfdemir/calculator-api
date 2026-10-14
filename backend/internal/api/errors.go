@@ -16,6 +16,7 @@ const (
 	codeDivisionByZero    = "DIVISION_BY_ZERO"
 	codeInvalidDomain     = "INVALID_DOMAIN"
 	codeResultOutOfRange  = "RESULT_OUT_OF_RANGE"
+	codeNotFound          = "NOT_FOUND"
 	codeMethodNotAllowed  = "METHOD_NOT_ALLOWED"
 	codeInternalError     = "INTERNAL_ERROR"
 )
