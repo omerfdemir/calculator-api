@@ -11,6 +11,7 @@ The source of truth for behavior, the API contract and the tests is [SPEC.md](SP
 - 7 operations: add, subtract, multiply, divide, power, square root and percentage.
 - Expressions with more than 1 operator and with brackets, for example `(2 + 3) × 4 − 6 ÷ 3 = 18`.
 - A phone-style keypad. You can also type on the keyboard: Enter calculates, Escape clears, and Backspace deletes 1 character.
+- An operator after a result continues from the full result, not from the rounded display.
 - The `%` key works like a phone calculator: `15% × 80 = 12` and `80 + 15% = 92`.
 - Clear error messages for division by zero, the square root of a negative number, a result that is too large, a syntax error and an API that is not available.
 - The last 10 calculations in a history list.
@@ -127,8 +128,8 @@ There are 4 test levels. Each level tests through a public seam, as [SPEC.md](SP
 | Backend HTTP API | Real HTTP requests to the full router with `httptest` | `make test-backend` | 13 tests with 55 table rows |
 | Calculator module | The public `Evaluate` function and the registry list | `make test-backend` | 5 tests with 94 table rows |
 | Server entry point | `run` with a real server and the `healthcheck` subcommand | `make test-backend` | 4 tests |
-| Frontend | The full rendered app with MSW at the network boundary | `make test-frontend` | 64 tests |
-| End-to-end | Playwright against the Compose stack, with no mocks | `make up`, then `make e2e` | 23 tests |
+| Frontend | The full rendered app with MSW at the network boundary | `make test-frontend` | 69 tests |
+| End-to-end | Playwright against the Compose stack, with no mocks | `make up`, then `make e2e` | 24 tests |
 
 Other commands:
 
@@ -152,7 +153,7 @@ These are the real numbers from `make coverage`.
 | Backend: API module | 97.4% | – | – | – | 90% of statements |
 | Backend: calculator and API together | 98.7% | – | – | – | 90% of statements |
 | Backend: server entry point | 76.0% | – | – | – | none |
-| Frontend: all files | 97.22% | 93.27% | 100% | 100% | 85% of lines |
+| Frontend: all files | 97.4% | 93.75% | 100% | 100% | 85% of lines |
 
 ## 6. API reference
 
@@ -255,7 +256,7 @@ These reasons come from the "Further Notes" section of [SPEC.md](SPEC.md).
 - **The backend does all calculations.** The assignment says that the frontend consumes the API. If both parts calculate, they can disagree. So the parser and the calculation are in the backend only. The frontend only filters characters and checks for an empty expression.
 - **Percentage definition (assumption).** The assignment does not define "percentage". This project uses the rule of a phone calculator: `x%` is `x ÷ 100`, and `a + b%` is `a + b% of a`. So "15% of 80" is `15% × 80 = 12`, and a 15% increase of 80 is `80 + 15% = 92`.
 - **Order of operations.** The calculator uses the standard mathematical order, as a modern phone calculator does: `2 + 3 × 4 = 14`, not 20. `−2 ^ 2 = −4`, because `^` binds more tightly than unary minus.
-- **Floating-point precision.** All numbers are IEEE 754 `float64` values. The API returns the raw result, so an API client gets the true value: `0.1 + 0.2` returns `0.30000000000000004`. The UI rounds to 12 significant digits only for display, so it shows `0.3`.
+- **Floating-point precision.** All numbers are IEEE 754 `float64` values. The API returns the raw result, so an API client gets the true value: `0.1 + 0.2` returns `0.30000000000000004`. The UI rounds to 12 significant digits only for display, so it shows `0.3`. When you continue from a result, the UI sends the full value: `1 ÷ 3 = 0.333333333333`, then `× 3`, gives `1`.
 - **Status 422 compared to 400.** 400 means that the request is malformed, and this includes a syntax error in the expression. 422 means that the expression is valid, but there is no mathematical result. An API client can tell its own errors from domain errors.
 - **Expression limits.** The limits of 200 characters and a bracket depth of 32 stop very long or very deep input. Deep input can use too much stack in a recursive parser.
 - **Keypad with a text input.** A text input with `inputmode="none"` gives a visible label, screen reader support, normal keyboard typing and Enter, and it does not open the phone keyboard. The keypad buttons add the touch layout of a phone calculator.

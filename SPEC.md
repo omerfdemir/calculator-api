@@ -48,7 +48,7 @@ Docker Compose runs the application as 2 services. The `api` service runs the Go
 16. As a user, I want an error message when the expression is empty, so that I know what to correct.
 17. As a user, I want a clear error message that shows the position of a syntax error (for example a missing bracket), so that I can correct the expression.
 18. As a user, I want to delete the last character, so that I can correct a typing error.
-19. As a user, I want to continue from the last result when I press an operator, and to start a new expression when I press a digit, so that the keypad works like a phone calculator.
+19. As a user, I want to continue from the full last result when I press an operator, and to start a new expression when I press a digit, so that the keypad works like a phone calculator and does not lose precision (`1 ÷ 3`, then `× 3`, gives `1`).
 20. As a user, I want the `=` key to stay disabled while a request runs, so that I do not send the same request 2 times.
 21. As a user, I want to see a loading state, so that I know the app is working.
 
@@ -238,7 +238,7 @@ The error codes are part of the public contract. The message text can change.
   The keypad shows an operation key only for an operation in the list from the API. An operation in the list that is not in this grid gets a key in an extra row after the grid. `EE` inserts `e` for exponent notation. Each key has an accessible name, for example "divide" and "square root".
 - **Expression input.** The display has 1 text input with a visible label. It uses `inputmode="none"`, so a phone does not open its own keyboard. A keypad key inserts its symbol at the end of the expression.
 - **Keyboard.** The user can type in the input. The input accepts only digits, `.`, `e`, `E`, the operation symbols, `(`, `)` and spaces. It ignores other characters. It shows `*`, `/` and `-` as `×`, `÷` and `−`. Enter calculates. Escape clears the expression, the result and the error. Backspace deletes 1 character.
-- **After a result.** An operation key or an operation character continues the expression from the result (for example the result `14`, then `×`, gives `14 ×`). A digit, `.`, `√` or `(` starts a new expression. The result is inserted as the display shows it.
+- **After a result.** An operation key or an operation character continues the expression from the result (for example the result `14`, then `×`, gives `14 ×`). A digit, `.`, `√` or `(` starts a new expression. The input shows the result as the display shows it, but the app sends the full `float64` value to the API. So `1 ÷ 3 = 0.333333333333`, then `× 3`, gives `0.333333333333 × 3 = 1`. The app sends the full value only while the expression still starts with the display text and no digit, `.` or `e` follows it. After another edit of the result, the app sends the expression as typed. The result line and the history show the display text, not the full value.
 - The client-side validation is for user experience only. The API is the source of truth. The client checks only for an empty expression and filters the characters. The client does not parse the expression and does not check domain rules. These errors come from the API, so the frontend and the backend cannot disagree.
 - The display shows the result line as `<normalized expression> = <result>`, with the normalized expression from the API.
 - The display rounds a result to 12 significant digits and removes trailing zeros. The API returns the full `float64` value.
@@ -313,7 +313,7 @@ There are 4 seams. Each seam has a different job.
    - Each operation flow with the keypad.
    - A multi-operator expression and brackets.
    - Keyboard typing, the character filter and the `*`, `/`, `-` replacement.
-   - `⌫`, `AC`, and the rules after a result (operator continues, digit starts new).
+   - `⌫`, `AC`, and the rules after a result (operator continues from the full value, digit starts new, an edited result is sent as typed).
    - The keypad shows only the operations from the API.
    - The loading state and the disabled `=` key.
    - Each API error code shows the correct message, including the position for `INVALID_EXPRESSION`.
@@ -328,7 +328,7 @@ There are 4 seams. Each seam has a different job.
 4. **End-to-end (Playwright).** Playwright runs against the full Compose stack at `localhost:8080`. It uses no mocks. The tests cover these flows:
    - The page loads and shows a key for each of the 7 operations from the real API.
    - A happy path for each operation with the keypad.
-   - A multi-operator expression with brackets, and a phone percentage (`80 + 15% = 92`).
+   - A multi-operator expression with brackets, a phone percentage (`80 + 15% = 92`), and a continuation from the full result (`1 ÷ 3`, then `× 3`, gives `1`).
    - Division by zero, the square root of a negative number and a syntax error show the correct messages.
    - A keyboard-only flow.
    - A mobile viewport (360 × 800) has no horizontal scroll, and the main flow works.
@@ -367,7 +367,7 @@ The repository is new, so there is no prior art. Follow the standard patterns:
 - **Why the backend does all calculations.** The assignment says that the frontend consumes the API. If both parts calculate, they can disagree. So the parser and the calculation are in the backend only. The frontend only filters characters and checks for an empty expression.
 - **Percentage definition.** The assignment does not define "percentage". This spec uses the rule of a phone calculator: `x%` is `x ÷ 100`, and `a + b%` is `a + b% of a`. So "15% of 80" is `15% × 80 = 12`, and a 15% increase of 80 is `80 + 15% = 92`. The README must state this assumption.
 - **Order of operations.** The calculator uses the standard mathematical order, as a modern phone calculator does: `2 + 3 × 4 = 14`, not 20. `−2 ^ 2 = −4`, because `^` binds more tightly than unary minus. The README must state this.
-- **Floating-point precision.** The API returns the raw `float64` result, so an API client gets the true value. The UI rounds to 12 significant digits only for display. The README must explain this decision with the `0.1 + 0.2` example.
+- **Floating-point precision.** The API returns the raw `float64` result, so an API client gets the true value. The UI rounds to 12 significant digits only for display. When the user continues from a result, the UI sends the full value, so the rounding does not change the next result. The README must explain this decision with the `0.1 + 0.2` example.
 - **Status 422 compared to 400.** 400 means that the request is malformed, and this includes a syntax error in the expression. 422 means that the expression is valid, but there is no mathematical result. This lets an API client tell its own errors from domain errors.
 - **Expression limits.** The limits of 200 characters and a bracket depth of 32 stop very long or very deep input. Deep input can use too much stack in a recursive parser.
 - **Keypad with a text input.** A text input with `inputmode="none"` gives a visible label, screen reader support, normal keyboard typing and Enter, and it does not open the phone keyboard. The keypad buttons add the touch layout of a phone calculator.

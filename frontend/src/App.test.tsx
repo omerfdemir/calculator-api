@@ -157,6 +157,57 @@ describe("calculation with the keypad", () => {
     expect(expressionInput()).toHaveValue("−3×2");
   });
 
+  it("continues from the full result, not the rounded display", async () => {
+    const user = await renderApp();
+    await press(user, "1÷3");
+    await user.click(screen.getByRole("button", { name: "equals" }));
+    await expectResult("1 ÷ 3 = 0.333333333333");
+    await press(user, "×3");
+    expect(expressionInput()).toHaveValue("0.333333333333×3");
+    await user.click(screen.getByRole("button", { name: "equals" }));
+    await expectResult("0.333333333333 × 3 = 1");
+    const history = screen.getByRole("list", { name: "History" });
+    expect(within(history).getAllByRole("listitem")[0]).toHaveTextContent("0.333333333333 × 3 = 1");
+  });
+
+  it("continues from a full negative result", async () => {
+    const user = await renderApp();
+    await press(user, "−1÷3");
+    await user.click(screen.getByRole("button", { name: "equals" }));
+    await expectResult("−1 ÷ 3 = −0.333333333333");
+    await press(user, "×3");
+    await user.click(screen.getByRole("button", { name: "equals" }));
+    await expectResult("−0.333333333333 × 3 = −1");
+  });
+
+  it("sends the typed value when the carried result is edited", async () => {
+    const user = await renderApp();
+    await press(user, "1÷3");
+    await user.click(screen.getByRole("button", { name: "equals" }));
+    await expectResult("= 0.333333333333");
+    await press(user, "×3");
+    for (let i = 0; i < 3; i++) {
+      await user.click(screen.getByRole("button", { name: "delete" }));
+    }
+    await press(user, "×3");
+    expect(expressionInput()).toHaveValue("0.33333333333×3");
+    await user.click(screen.getByRole("button", { name: "equals" }));
+    await expectResult("0.33333333333 × 3 = 0.99999999999");
+  });
+
+  it("sends the typed value when a digit follows the carried result", async () => {
+    const user = await renderApp();
+    await press(user, "1÷3");
+    await user.click(screen.getByRole("button", { name: "equals" }));
+    await expectResult("= 0.333333333333");
+    await press(user, "×");
+    await user.click(screen.getByRole("button", { name: "delete" }));
+    await press(user, "5×3");
+    expect(expressionInput()).toHaveValue("0.3333333333335×3");
+    await user.click(screen.getByRole("button", { name: "equals" }));
+    await expectResult("0.3333333333335 × 3 = 1");
+  });
+
   it("starts a new expression when a digit follows a result", async () => {
     const user = await renderApp();
     await press(user, "2+3");
@@ -198,6 +249,14 @@ describe("keyboard", () => {
     await expectResult("= 14");
     await user.type(expressionInput(), "*2");
     expect(expressionInput()).toHaveValue("14×2");
+  });
+
+  it("continues from the full result when an operator is typed", async () => {
+    const user = await renderApp();
+    await user.type(expressionInput(), "1/3{Enter}");
+    await expectResult("= 0.333333333333");
+    await user.type(expressionInput(), "*3{Enter}");
+    await expectResult("0.333333333333 × 3 = 1");
   });
 
   it("starts a new expression when a digit is typed after a result", async () => {

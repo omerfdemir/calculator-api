@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { calculate, type Calculation, type Operation } from "../api/client";
 import type { MessageCode } from "../errors/messages";
-import { formatNumber } from "../format";
+import { formatExact, formatNumber } from "../format";
 
 export const maxExpressionLength = 200;
 export const historyLimit = 10;
@@ -13,6 +13,15 @@ export interface CalculatorError {
   position?: number;
 }
 
+/**
+ * A result that the expression continues from. The input shows the rounded
+ * display text, and the API gets the full value.
+ */
+interface Carry {
+  display: string;
+  full: string;
+}
+
 interface State {
   expression: string;
   status: Status;
@@ -21,6 +30,7 @@ interface State {
   history: Calculation[];
   /** True right after a result: the next key continues from it or starts again. */
   afterResult: boolean;
+  carry: Carry | null;
 }
 
 const initialState: State = {
@@ -30,6 +40,7 @@ const initialState: State = {
   error: null,
   history: [],
   afterResult: false,
+  carry: null,
 };
 
 /** The ASCII characters that the input shows as keypad symbols. */
@@ -37,6 +48,50 @@ const asciiSymbols: Record<string, string> = { "*": "×", "/": "÷", "-": "−" 
 
 function clamp(expression: string): string {
   return Array.from(expression).slice(0, maxExpressionLength).join("");
+}
+
+/** Applies the phone rule for text after a result: continue from it, or start again. */
+function afterResult(
+  result: Calculation,
+  text: string,
+  startsNew: (text: string) => boolean,
+): Pick<State, "expression" | "carry" | "afterResult"> {
+  if (startsNew(text)) {
+    return { expression: clamp(text), carry: null, afterResult: false };
+  }
+  const display = formatNumber(result.result);
+  return {
+    expression: clamp(display + text),
+    carry: { display, full: formatExact(result.result) },
+    afterResult: false,
+  };
+}
+
+/**
+ * Returns the expression for the API. While the expression starts with the
+ * carried display text, the API gets the full value. A digit right after the
+ * display text changes the number, so then the typed text is sent.
+ */
+function toRequest(expression: string, carry: Carry | null): { sent: string; used: Carry | null } {
+  if (carry === null || !expression.startsWith(carry.display)) {
+    return { sent: expression, used: null };
+  }
+  const rest = expression.slice(carry.display.length);
+  if (/^[0-9.eE]/.test(rest)) {
+    return { sent: expression, used: null };
+  }
+  return { sent: carry.full + rest, used: carry };
+}
+
+/** Shows the display text again in place of the full value that the API echoes. */
+function toDisplay(calculation: Calculation, used: Carry | null): Calculation {
+  if (used === null || !calculation.expression.startsWith(used.full)) {
+    return calculation;
+  }
+  return {
+    ...calculation,
+    expression: used.display + calculation.expression.slice(used.full.length),
+  };
 }
 
 /**
@@ -63,11 +118,10 @@ export function useCalculator(operations: Operation[]) {
   const insert = useCallback(
     (text: string) => {
       setState((s) => {
-        let expression = s.expression + text;
         if (s.afterResult && s.result !== null) {
-          expression = startsNew(text) ? text : formatNumber(s.result.result) + text;
+          return { ...s, ...afterResult(s.result, text, startsNew) };
         }
-        return { ...s, expression: clamp(expression), afterResult: false };
+        return { ...s, expression: clamp(s.expression + text), afterResult: false };
       });
     },
     [startsNew],
@@ -88,8 +142,7 @@ export function useCalculator(operations: Operation[]) {
         ) {
           const text = filtered.slice(s.expression.length);
           if (s.result !== null) {
-            const expression = startsNew(text) ? text : formatNumber(s.result.result) + text;
-            return { ...s, expression: clamp(expression), afterResult: false };
+            return { ...s, ...afterResult(s.result, text, startsNew) };
           }
         }
         return { ...s, expression: clamp(filtered), afterResult: false };
@@ -129,11 +182,12 @@ export function useCalculator(operations: Operation[]) {
 
     const id = ++requestId.current;
     setState((s) => ({ ...s, status: "loading", error: null }));
-    const response = await calculate(state.expression);
+    const { sent, used } = toRequest(state.expression, state.carry);
+    const response = await calculate(sent);
     if (id !== requestId.current) return;
 
     if (response.ok) {
-      const calculation = response.value;
+      const calculation = toDisplay(response.value, used);
       setState((s) => ({
         ...s,
         status: "success",
@@ -141,6 +195,7 @@ export function useCalculator(operations: Operation[]) {
         error: null,
         history: [calculation, ...s.history].slice(0, historyLimit),
         afterResult: true,
+        carry: null,
       }));
     } else {
       const error: CalculatorError =
@@ -149,7 +204,7 @@ export function useCalculator(operations: Operation[]) {
           : { code: response.code, position: response.position };
       setState((s) => ({ ...s, status: "error", result: null, error, afterResult: false }));
     }
-  }, [state.expression, state.status]);
+  }, [state.expression, state.status, state.carry]);
 
   return { ...state, insert, type, deleteLast, clear, clearHistory, evaluate };
 }

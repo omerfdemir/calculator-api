@@ -85,6 +85,15 @@ test("shows 0.1 + 0.2 as 0.3 and continues from the result", async ({ page }) =>
   ]);
 });
 
+test("continues from the full result, not the rounded display", async ({ page }) => {
+  await press(page, "1÷3");
+  await equals(page);
+  await expect(page.getByRole("status")).toHaveText("1 ÷ 3 = 0.333333333333");
+  await press(page, "×3");
+  await equals(page);
+  await expect(page.getByRole("status")).toHaveText("0.333333333333 × 3 = 1");
+});
+
 test.describe("error messages", () => {
   const cases = [
     ["division by zero", "1÷0", "You cannot divide by zero."],
