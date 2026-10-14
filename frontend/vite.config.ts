@@ -16,7 +16,7 @@ export default defineConfig({
       provider: "v8",
       include: ["src/**/*.{ts,tsx}"],
       exclude: ["src/main.tsx", "src/test/**", "src/**/*.test.{ts,tsx}"],
-      reporter: ["text", "html"],
+      reporter: [["text", { skipFull: false }], "html", "json-summary"],
       reportsDirectory: "../coverage/frontend",
       thresholds: { lines: 85 },
     },
