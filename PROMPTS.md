@@ -143,7 +143,7 @@ Also:
 - `git status` is clean, and the history has small, meaningful commits.
 ```
 
-Result: the agent read `SPEC.md`, asked about the scope, and made a plan.
+Result: the agent read `SPEC.md`, asked about the scope, and made a plan. After the scope change in entry 3, it built the backend, the frontend, the Compose stack, the Playwright tests, CI and the README, test first and in small commits.
 
 ## 2. `/to-spec`: write the spec
 
