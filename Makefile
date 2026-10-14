@@ -1,5 +1,4 @@
 SHELL := /bin/bash
-.SHELLFLAGS := -eu -o pipefail -c
 .DEFAULT_GOAL := help
 
 BACKEND  := backend
@@ -59,7 +58,8 @@ coverage-backend:
 	cd $(BACKEND) && go test -race -covermode=atomic -coverpkg=./internal/... \
 		-coverprofile=../$(COVERAGE)/backend/coverage.out ./...
 	cd $(BACKEND) && go tool cover -func=../$(COVERAGE)/backend/coverage.out \
-		| tee ../$(COVERAGE)/backend/coverage.txt
+		> ../$(COVERAGE)/backend/coverage.txt
+	cat $(COVERAGE)/backend/coverage.txt
 	cd $(BACKEND) && go tool cover -html=../$(COVERAGE)/backend/coverage.out \
 		-o ../$(COVERAGE)/backend/index.html
 	@total=$$(awk '/^total:/ {sub("%", "", $$3); print $$3}' $(COVERAGE)/backend/coverage.txt); \
