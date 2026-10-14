@@ -14,10 +14,6 @@ type handlers struct {
 	evaluate func(string) (calculator.Result, error)
 }
 
-type calculateRequest struct {
-	Expression *string `json:"expression"`
-}
-
 type calculateResponse struct {
 	Expression string  `json:"expression"`
 	Result     float64 `json:"result"`
@@ -37,8 +33,8 @@ func (h *handlers) calculate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req calculateRequest
-	if err := decodeJSON(r.Body, &req); err != nil {
+	expression, err := decodeExpression(r.Body)
+	if err != nil {
 		var tooLarge *http.MaxBytesError
 		if errors.As(err, &tooLarge) {
 			writeError(w, http.StatusRequestEntityTooLarge, codeRequestTooLarge, "the request body is larger than 1 MB", nil)
@@ -47,12 +43,12 @@ func (h *handlers) calculate(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, codeInvalidRequest, "the request body is not a valid calculate request", nil)
 		return
 	}
-	if req.Expression == nil {
+	if expression == nil {
 		writeError(w, http.StatusBadRequest, codeInvalidRequest, "the expression is required and must be a string", nil)
 		return
 	}
 
-	result, err := h.evaluate(*req.Expression)
+	result, err := h.evaluate(*expression)
 	if err != nil {
 		writeCalculatorError(w, err)
 		return
@@ -60,20 +56,45 @@ func (h *handlers) calculate(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, calculateResponse{Expression: result.Expression, Result: result.Value})
 }
 
-// decodeJSON decodes exactly 1 JSON value with no unknown fields.
-func decodeJSON(body io.Reader, v any) error {
+var errInvalidBody = errors.New("the body is not a valid calculate request")
+
+// decodeExpression reads exactly 1 JSON object. The only allowed key is
+// "expression", exactly once and in this case. encoding/json matches keys
+// without case and keeps the last duplicate, so the keys are read as tokens.
+// A missing or null expression returns nil.
+func decodeExpression(body io.Reader) (*string, error) {
 	dec := json.NewDecoder(body)
-	dec.DisallowUnknownFields()
-	if err := dec.Decode(v); err != nil {
-		return err
+	if tok, err := dec.Token(); err != nil {
+		return nil, err
+	} else if tok != json.Delim('{') {
+		return nil, errInvalidBody
 	}
-	if err := dec.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
-		if err == nil {
-			return errors.New("the body has more than 1 JSON value")
+
+	var expression *string
+	seen := false
+	for dec.More() {
+		tok, err := dec.Token()
+		if err != nil {
+			return nil, err
 		}
-		return err
+		if tok != "expression" || seen {
+			return nil, errInvalidBody
+		}
+		seen = true
+		if err := dec.Decode(&expression); err != nil {
+			return nil, err
+		}
 	}
-	return nil
+	if _, err := dec.Token(); err != nil { // The closing brace.
+		return nil, err
+	}
+	if _, err := dec.Token(); !errors.Is(err, io.EOF) { // Nothing after the object.
+		if err == nil {
+			return nil, errInvalidBody
+		}
+		return nil, err
+	}
+	return expression, nil
 }
 
 func (h *handlers) operations(w http.ResponseWriter, _ *http.Request) {

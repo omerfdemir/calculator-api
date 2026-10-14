@@ -124,7 +124,7 @@ There are 4 test levels. Each level tests through a public seam, as [SPEC.md](SP
 
 | Level | Seam | Command | Tests |
 |---|---|---|---|
-| Backend HTTP API | Real HTTP requests to the full router with `httptest` | `make test-backend` | 12 tests with 42 table rows |
+| Backend HTTP API | Real HTTP requests to the full router with `httptest` | `make test-backend` | 12 tests with 49 table rows |
 | Calculator module | The public `Evaluate` function and the registry list | `make test-backend` | 5 tests with 89 table rows |
 | Server entry point | `run` with a real server and the `healthcheck` subcommand | `make test-backend` | 4 tests |
 | Frontend | The full rendered app with MSW at the network boundary | `make test-frontend` | 62 tests |
@@ -149,8 +149,8 @@ These are the real numbers from `make coverage`.
 | Part | Statements | Branches | Functions | Lines | Target |
 |---|---|---|---|---|---|
 | Backend: calculator module | 99.5% | – | – | – | 90% of statements |
-| Backend: API module | 98.0% | – | – | – | 90% of statements |
-| Backend: calculator and API together | 98.9% | – | – | – | 90% of statements |
+| Backend: API module | 97.3% | – | – | – | 90% of statements |
+| Backend: calculator and API together | 98.7% | – | – | – | 90% of statements |
 | Backend: server entry point | 76.0% | – | – | – | none |
 | Frontend: all files | 97.22% | 93.27% | 100% | 100% | 85% of lines |
 
