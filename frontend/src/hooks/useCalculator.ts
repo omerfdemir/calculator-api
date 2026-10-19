@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { calculate, type Calculation, type Operation } from "../api/client";
 import type { MessageCode } from "../errors/messages";
-import { formatExact, formatNumber } from "../format";
+import { continueFromResult, toDisplay, toRequest, type Carry } from "../carry";
 
 export const maxExpressionLength = 200;
 export const historyLimit = 10;
@@ -11,15 +11,6 @@ export type Status = "idle" | "loading" | "success" | "error";
 export interface CalculatorError {
   code: MessageCode;
   position?: number;
-}
-
-/**
- * A result that the expression continues from. The input shows the rounded
- * display text, and the API gets the full value.
- */
-interface Carry {
-  display: string;
-  full: string;
 }
 
 interface State {
@@ -50,53 +41,15 @@ function clamp(expression: string): string {
   return Array.from(expression).slice(0, maxExpressionLength).join("");
 }
 
-/** Puts a negative number in brackets, so that `^` raises the whole value: (−3)^2. */
-function bracketNegative(text: string, value: number): string {
-  return value < 0 ? `(${text})` : text;
-}
-
-/** Applies the phone rule for text after a result: continue from it, or start again. */
-function continueFromResult(
+/** Applies the phone rule for text that follows a result. */
+function afterResultInput(
+  s: State,
   result: Calculation,
   text: string,
   startsNew: (text: string) => boolean,
-): Pick<State, "expression" | "carry" | "afterResult"> {
-  if (startsNew(text)) {
-    return { expression: clamp(text), carry: null, afterResult: false };
-  }
-  const display = bracketNegative(formatNumber(result.result), result.result);
-  return {
-    expression: clamp(display + text),
-    carry: { display, full: bracketNegative(formatExact(result.result), result.result) },
-    afterResult: false,
-  };
-}
-
-/**
- * Returns the expression for the API. While the expression starts with the
- * carried display text, the API gets the full value. A digit right after the
- * display text changes the number, so then the typed text is sent.
- */
-function toRequest(expression: string, carry: Carry | null): { sent: string; used: Carry | null } {
-  if (carry === null || !expression.startsWith(carry.display)) {
-    return { sent: expression, used: null };
-  }
-  const rest = expression.slice(carry.display.length);
-  if (/^[0-9.eE]/.test(rest)) {
-    return { sent: expression, used: null };
-  }
-  return { sent: carry.full + rest, used: carry };
-}
-
-/** Shows the display text again in place of the full value that the API echoes. */
-function toDisplay(calculation: Calculation, used: Carry | null): Calculation {
-  if (used === null || !calculation.expression.startsWith(used.full)) {
-    return calculation;
-  }
-  return {
-    ...calculation,
-    expression: used.display + calculation.expression.slice(used.full.length),
-  };
+): State {
+  const next = continueFromResult(result, text, startsNew);
+  return { ...s, expression: clamp(next.expression), carry: next.carry, afterResult: false };
 }
 
 /**
@@ -124,7 +77,7 @@ export function useCalculator(operations: Operation[]) {
     (text: string) => {
       setState((s) => {
         if (s.afterResult && s.result !== null) {
-          return { ...s, ...continueFromResult(s.result, text, startsNew) };
+          return afterResultInput(s, s.result, text, startsNew);
         }
         return { ...s, expression: clamp(s.expression + text), afterResult: false };
       });
@@ -147,7 +100,7 @@ export function useCalculator(operations: Operation[]) {
           filtered.length > s.expression.length
         ) {
           const text = filtered.slice(s.expression.length);
-          return { ...s, ...continueFromResult(s.result, text, startsNew) };
+          return afterResultInput(s, s.result, text, startsNew);
         }
         return { ...s, expression: clamp(filtered), afterResult: false };
       });
