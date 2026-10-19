@@ -8,17 +8,23 @@ import (
 	"calculator-api/backend/internal/calculator"
 )
 
+// errorCode is an error code and its HTTP status.
+type errorCode struct {
+	name   string
+	status int
+}
+
 // Error codes. They are part of the public contract.
-const (
-	codeInvalidRequest    = "INVALID_REQUEST"
-	codeRequestTooLarge   = "REQUEST_TOO_LARGE"
-	codeInvalidExpression = "INVALID_EXPRESSION"
-	codeDivisionByZero    = "DIVISION_BY_ZERO"
-	codeInvalidDomain     = "INVALID_DOMAIN"
-	codeResultOutOfRange  = "RESULT_OUT_OF_RANGE"
-	codeNotFound          = "NOT_FOUND"
-	codeMethodNotAllowed  = "METHOD_NOT_ALLOWED"
-	codeInternalError     = "INTERNAL_ERROR"
+var (
+	codeInvalidRequest    = errorCode{"INVALID_REQUEST", http.StatusBadRequest}
+	codeRequestTooLarge   = errorCode{"REQUEST_TOO_LARGE", http.StatusRequestEntityTooLarge}
+	codeInvalidExpression = errorCode{"INVALID_EXPRESSION", http.StatusBadRequest}
+	codeDivisionByZero    = errorCode{"DIVISION_BY_ZERO", http.StatusUnprocessableEntity}
+	codeInvalidDomain     = errorCode{"INVALID_DOMAIN", http.StatusUnprocessableEntity}
+	codeResultOutOfRange  = errorCode{"RESULT_OUT_OF_RANGE", http.StatusUnprocessableEntity}
+	codeNotFound          = errorCode{"NOT_FOUND", http.StatusNotFound}
+	codeMethodNotAllowed  = errorCode{"METHOD_NOT_ALLOWED", http.StatusMethodNotAllowed}
+	codeInternalError     = errorCode{"INTERNAL_ERROR", http.StatusInternalServerError}
 )
 
 type errorResponse struct {
@@ -31,10 +37,10 @@ type errorDetail struct {
 	Position *int   `json:"position,omitempty"`
 }
 
-// domainErrors maps each domain error to its error code. All get status 422.
+// domainErrors maps each domain error to its error code.
 var domainErrors = []struct {
 	err  error
-	code string
+	code errorCode
 }{
 	{calculator.ErrDivisionByZero, codeDivisionByZero},
 	{calculator.ErrInvalidDomain, codeInvalidDomain},
@@ -44,20 +50,24 @@ var domainErrors = []struct {
 func writeCalculatorError(w http.ResponseWriter, err error) {
 	var syntaxErr *calculator.SyntaxError
 	if errors.As(err, &syntaxErr) {
-		writeError(w, http.StatusBadRequest, codeInvalidExpression, syntaxErr.Reason, &syntaxErr.Position)
+		writeError(w, codeInvalidExpression, syntaxErr.Reason, &syntaxErr.Position)
 		return
 	}
 	for _, d := range domainErrors {
 		if errors.Is(err, d.err) {
-			writeError(w, http.StatusUnprocessableEntity, d.code, d.err.Error(), nil)
+			writeError(w, d.code, d.err.Error(), nil)
 			return
 		}
 	}
-	writeError(w, http.StatusInternalServerError, codeInternalError, "an internal error occurred", nil)
+	writeInternalError(w)
 }
 
-func writeError(w http.ResponseWriter, status int, code, message string, position *int) {
-	writeJSON(w, status, errorResponse{Error: errorDetail{Code: code, Message: message, Position: position}})
+func writeInternalError(w http.ResponseWriter) {
+	writeError(w, codeInternalError, "an internal error occurred", nil)
+}
+
+func writeError(w http.ResponseWriter, code errorCode, message string, position *int) {
+	writeJSON(w, code.status, errorResponse{Error: errorDetail{Code: code.name, Message: message, Position: position}})
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {

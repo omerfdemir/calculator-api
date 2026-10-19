@@ -44,7 +44,7 @@ func recoverPanics(logger *slog.Logger, next http.Handler) http.Handler {
 				panic(v)
 			}
 			logger.ErrorContext(r.Context(), "panic", slog.Any("panic", v), slog.String("path", r.URL.Path))
-			writeError(w, http.StatusInternalServerError, codeInternalError, "an internal error occurred", nil)
+			writeInternalError(w)
 		}()
 		next.ServeHTTP(w, r)
 	})

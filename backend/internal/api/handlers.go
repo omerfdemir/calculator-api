@@ -29,7 +29,7 @@ type operationResponse struct {
 func (h *handlers) calculate(w http.ResponseWriter, r *http.Request) {
 	mediaType, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	if err != nil || mediaType != "application/json" {
-		writeError(w, http.StatusBadRequest, codeInvalidRequest, "the Content-Type must be application/json", nil)
+		writeError(w, codeInvalidRequest, "the Content-Type must be application/json", nil)
 		return
 	}
 
@@ -37,14 +37,14 @@ func (h *handlers) calculate(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		var tooLarge *http.MaxBytesError
 		if errors.As(err, &tooLarge) {
-			writeError(w, http.StatusRequestEntityTooLarge, codeRequestTooLarge, "the request body is larger than 1 MB", nil)
+			writeError(w, codeRequestTooLarge, "the request body is larger than 1 MB", nil)
 			return
 		}
-		writeError(w, http.StatusBadRequest, codeInvalidRequest, "the request body is not a valid calculate request", nil)
+		writeError(w, codeInvalidRequest, "the request body is not a valid calculate request", nil)
 		return
 	}
 	if expression == nil {
-		writeError(w, http.StatusBadRequest, codeInvalidRequest, "the expression is required and must be a string", nil)
+		writeError(w, codeInvalidRequest, "the expression is required and must be a string", nil)
 		return
 	}
 
@@ -113,12 +113,12 @@ func (h *handlers) healthz(w http.ResponseWriter, _ *http.Request) {
 }
 
 func notFound(w http.ResponseWriter, _ *http.Request) {
-	writeError(w, http.StatusNotFound, codeNotFound, "the path does not exist", nil)
+	writeError(w, codeNotFound, "the path does not exist", nil)
 }
 
 func methodNotAllowed(allow string) http.HandlerFunc {
 	return func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Allow", allow)
-		writeError(w, http.StatusMethodNotAllowed, codeMethodNotAllowed, "the method is not allowed", nil)
+		writeError(w, codeMethodNotAllowed, "the method is not allowed", nil)
 	}
 }
