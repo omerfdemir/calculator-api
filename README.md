@@ -1,5 +1,7 @@
 # Full-Stack Calculator
 
+[![CI](https://github.com/omerfdemir/calculator-api/actions/workflows/ci.yml/badge.svg)](https://github.com/omerfdemir/calculator-api/actions/workflows/ci.yml)
+
 A web calculator that works like a phone calculator. A React and TypeScript frontend sends each expression to a Go REST API. The API parses the expression, calculates the result and returns JSON. Docker Compose runs the full app with 1 command.
 
 The source of truth for behavior, the API contract and the tests is [SPEC.md](SPEC.md). The AI prompts that built the project are in [PROMPTS.md](PROMPTS.md).
@@ -52,7 +54,14 @@ frontend/           React app, Dockerfile and nginx configuration
   src/errors/       error code to message map
   src/hooks/        calculator state hook and operations hook
   src/components/   Calculator, Display, Keypad, ErrorMessage and History
+  src/carry.ts      rules for continuing from a result (full value, brackets)
+  src/format.ts     display rounding to 12 significant digits
+  src/test/         MSW test server and fixtures
+  nginx/            nginx server and security-header configuration
 e2e/                Playwright tests against the Compose stack
+scripts/            the Makefile test for `make check`
+docs/               the README screenshot
+.github/workflows/  the CI workflow
 compose.yaml        the 2 services
 Makefile            the single entry point for all tasks
 ```
@@ -74,7 +83,7 @@ To run only the full app, you need only Docker.
 1. Clone the repository:
 
    ```bash
-   git clone <repository-url> calculator-api
+   git clone https://github.com/omerfdemir/calculator-api.git
    ```
 
 2. Go to the repository folder:
@@ -117,7 +126,7 @@ The Vite dev server forwards `/api` to `http://localhost:8080`, so the dev setup
 |---|---|---|
 | `PORT` | `8080` | The HTTP port of the API. |
 | `ALLOWED_ORIGINS` | `http://localhost:5173` | A comma-separated list of CORS origins. CORS is necessary only when the frontend and the API use different origins. The Compose stack does not need it. |
-| `VITE_API_URL` | empty (same origin) | The API origin for the frontend build. |
+| `VITE_API_URL` | empty (same origin) | The API origin for the frontend build. The nginx image allows only the same origin in its Content-Security-Policy, so a different API origin needs a different web server configuration. |
 
 ## 5. Tests
 
@@ -140,6 +149,8 @@ Other commands:
 | `make coverage` | The HTML and text coverage reports in `coverage/backend/` and `coverage/frontend/`. It fails if the backend coverage is below 90% or the frontend line coverage is below 85%. |
 | `make e2e` | The Playwright tests. The stack must run (`make up`). The HTML report is in `e2e/playwright-report/`. |
 | `make check` | Lint, tests, `make up`, `make e2e` and `make down`. It prints the Compose logs if the end-to-end tests fail. |
+
+CI (GitHub Actions) runs the same Makefile targets on every push and pull request: backend lint and coverage, the Makefile test, frontend lint, type check and coverage, and the Compose stack with the Playwright tests. It uploads the coverage reports and the Playwright report as artifacts.
 
 To take the README screenshot again, start the stack and run `npm run screenshot` in the `e2e` folder.
 
@@ -246,6 +257,7 @@ docker compose exec web wget -qO- http://api:8080/healthz
 | After `+` or `−`, a `%` term is a percentage of the left value, also with a unary minus. Brackets stop the rule. | `80 + 15% = 92`, `80 − 15% = 68`, `80 + −15% = 68`, `80 + (−15%) = 79.85` |
 | Numbers can be negative, decimal or in exponent notation. | `−1.5`, `.5`, `1e6`, `2.5e-3` |
 | Implicit multiplication is not allowed. | `2(3)` gives `INVALID_EXPRESSION` |
+| Spaces and tabs between tokens are allowed. | `2 + 3` |
 | An expression has 200 characters at most, and a bracket depth of 32 at most. | |
 
 ## 7. Design decisions and assumptions
@@ -253,10 +265,10 @@ docker compose exec web wget -qO- http://api:8080/healthz
 These reasons come from the "Further Notes" section of [SPEC.md](SPEC.md).
 
 - **1 expression endpoint with a registry.** There are 3 alternatives: 1 endpoint per operation, 1 endpoint for 1 operation with its operands, or 2 endpoints. The keypad sends a full expression, so an expression endpoint is necessary. A second endpoint for 1 operation adds code and tests, but the frontend does not use it, and an expression such as `2 + 3` does the same job. So there is 1 endpoint, with 1 validation path and 1 error format. The registry holds the symbol, the precedence and the function of each operation, and the parser reads them from the registry. A new operation is 1 registry entry and does not need a new route. The cost: an API client sends a string, not structured operands.
-- **The backend does all calculations.** The assignment says that the frontend consumes the API. If both parts calculate, they can disagree. So the parser and the calculation are in the backend only. The frontend only filters characters and checks for an empty expression.
+- **The backend does all calculations.** The assignment says that the frontend consumes the API. If both parts calculate, they can disagree. So the parser and the calculation are in the backend only. The frontend only filters characters, checks for an empty expression, and stops the input at 200 characters, the same limit as the API.
 - **Percentage definition (assumption).** The assignment does not define "percentage". This project uses the rule of a phone calculator: `x%` is `x ÷ 100`, and `a + b%` is `a + b% of a`. So "15% of 80" is `15% × 80 = 12`, and a 15% increase of 80 is `80 + 15% = 92`.
 - **Order of operations.** The calculator uses the standard mathematical order, as a modern phone calculator does: `2 + 3 × 4 = 14`, not 20. `−2 ^ 2 = −4`, because `^` binds more tightly than unary minus.
-- **Floating-point precision.** All numbers are IEEE 754 `float64` values. The API returns the raw result, so an API client gets the true value: `0.1 + 0.2` returns `0.30000000000000004`. The UI rounds to 12 significant digits only for display, so it shows `0.3`. When you continue from a result, the UI sends the full value: `1 ÷ 3 = 0.333333333333`, then `× 3`, gives `1`.
+- **Floating-point precision.** All numbers are IEEE 754 `float64` values. The API returns the raw result, so an API client gets the true value: `0.1 + 0.2` returns `0.30000000000000004`. The UI rounds to 12 significant digits only for display, so it shows `0.3`. When you continue from a result, the UI sends the full value, not the rounded one. For example, `1 ÷ 3` shows `0.333333333333`, but the app keeps `0.3333333333333333`. So `× 3` then gives exactly `1`, although the rounded number on the screen times 3 is `0.999999999999`.
 - **Status 422 compared to 400.** 400 means that the request is malformed, and this includes a syntax error in the expression. 422 means that the expression is valid, but there is no mathematical result. An API client can tell its own errors from domain errors.
 - **Expression limits.** The limits of 200 characters and a bracket depth of 32 stop very long or very deep input. Deep input can use too much stack in a recursive parser.
 - **Keypad with a text input.** A text input with `inputmode="none"` gives a visible label, screen reader support, normal keyboard typing and Enter, and it does not open the phone keyboard. The keypad buttons add the touch layout of a phone calculator.
@@ -275,6 +287,7 @@ Other implementation notes:
 - Cursor editing inside the expression, and a highlight on the character of a syntax error.
 - Decimal arithmetic for money calculations, so that `0.1 + 0.2` is exactly `0.3`.
 - A history that stays after a page reload.
+- Connection limits and a total request-body deadline at nginx before a public deployment. Today nginx limits only the time between 2 reads of a body, so a very slow client can hold a connection open (found in a security audit; the stack listens only on 127.0.0.1).
 - Rate limiting, metrics and tracing for a public deployment.
 - TLS in front of the `web` service, and a deployment to a cloud provider.
 - Multi-architecture images and an image vulnerability scan in CI.
