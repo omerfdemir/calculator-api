@@ -153,7 +153,7 @@ These are the real numbers from `make coverage`.
 | Backend: API module | 97.4% | – | – | – | 90% of statements |
 | Backend: calculator and API together | 98.7% | – | – | – | 90% of statements |
 | Backend: server entry point | 76.0% | – | – | – | none |
-| Frontend: all files | 97.4% | 93.75% | 100% | 100% | 85% of lines |
+| Frontend: all files | 97.4% | 94.48% | 100% | 100% | 85% of lines |
 
 ## 6. API reference
 

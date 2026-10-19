@@ -51,7 +51,7 @@ function clamp(expression: string): string {
 }
 
 /** Applies the phone rule for text after a result: continue from it, or start again. */
-function afterResult(
+function continueFromResult(
   result: Calculation,
   text: string,
   startsNew: (text: string) => boolean,
@@ -119,7 +119,7 @@ export function useCalculator(operations: Operation[]) {
     (text: string) => {
       setState((s) => {
         if (s.afterResult && s.result !== null) {
-          return { ...s, ...afterResult(s.result, text, startsNew) };
+          return { ...s, ...continueFromResult(s.result, text, startsNew) };
         }
         return { ...s, expression: clamp(s.expression + text), afterResult: false };
       });
@@ -137,13 +137,12 @@ export function useCalculator(operations: Operation[]) {
       setState((s) => {
         if (
           s.afterResult &&
+          s.result !== null &&
           filtered.startsWith(s.expression) &&
           filtered.length > s.expression.length
         ) {
           const text = filtered.slice(s.expression.length);
-          if (s.result !== null) {
-            return { ...s, ...afterResult(s.result, text, startsNew) };
-          }
+          return { ...s, ...continueFromResult(s.result, text, startsNew) };
         }
         return { ...s, expression: clamp(filtered), afterResult: false };
       });
