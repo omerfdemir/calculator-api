@@ -50,6 +50,11 @@ function clamp(expression: string): string {
   return Array.from(expression).slice(0, maxExpressionLength).join("");
 }
 
+/** Puts a negative number in brackets, so that `^` raises the whole value: (−3)^2. */
+function bracketNegative(text: string, value: number): string {
+  return value < 0 ? `(${text})` : text;
+}
+
 /** Applies the phone rule for text after a result: continue from it, or start again. */
 function continueFromResult(
   result: Calculation,
@@ -59,10 +64,10 @@ function continueFromResult(
   if (startsNew(text)) {
     return { expression: clamp(text), carry: null, afterResult: false };
   }
-  const display = formatNumber(result.result);
+  const display = bracketNegative(formatNumber(result.result), result.result);
   return {
     expression: clamp(display + text),
-    carry: { display, full: formatExact(result.result) },
+    carry: { display, full: bracketNegative(formatExact(result.result), result.result) },
     afterResult: false,
   };
 }

@@ -85,6 +85,16 @@ test("shows 0.1 + 0.2 as 0.3 and continues from the result", async ({ page }) =>
   ]);
 });
 
+test("puts a negative result in brackets before a power", async ({ page }) => {
+  await press(page, "1−4");
+  await equals(page);
+  await expect(page.getByRole("status")).toHaveText("1 − 4 = −3");
+  await press(page, "^2");
+  await expect(page.getByRole("textbox", { name: "Expression" })).toHaveValue("(−3)^2");
+  await equals(page);
+  await expect(page.getByRole("status")).toHaveText("(−3) ^ 2 = 9");
+});
+
 test("continues from the full result, not the rounded display", async ({ page }) => {
   await press(page, "1÷3");
   await equals(page);

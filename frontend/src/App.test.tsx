@@ -148,13 +148,24 @@ describe("calculation with the keypad", () => {
     await expectResult("14 × 2 = 28");
   });
 
-  it("continues from a negative result with the minus sign of the display", async () => {
+  it("puts a negative result in brackets when it continues", async () => {
     const user = await renderApp();
     await press(user, "−1.5×2");
     await user.click(screen.getByRole("button", { name: "equals" }));
     await expectResult("= −3");
     await press(user, "×2");
-    expect(expressionInput()).toHaveValue("−3×2");
+    expect(expressionInput()).toHaveValue("(−3)×2");
+  });
+
+  it("raises a negative result to a power, not only its digits", async () => {
+    const user = await renderApp();
+    await press(user, "−1.5×2");
+    await user.click(screen.getByRole("button", { name: "equals" }));
+    await expectResult("= −3");
+    await press(user, "^2");
+    expect(expressionInput()).toHaveValue("(−3)^2");
+    await user.click(screen.getByRole("button", { name: "equals" }));
+    await expectResult("(−3) ^ 2 = 9");
   });
 
   it("continues from the full result, not the rounded display", async () => {
@@ -176,8 +187,9 @@ describe("calculation with the keypad", () => {
     await user.click(screen.getByRole("button", { name: "equals" }));
     await expectResult("−1 ÷ 3 = −0.333333333333");
     await press(user, "×3");
+    expect(expressionInput()).toHaveValue("(−0.333333333333)×3");
     await user.click(screen.getByRole("button", { name: "equals" }));
-    await expectResult("−0.333333333333 × 3 = −1");
+    await expectResult("(−0.333333333333) × 3 = −1");
   });
 
   it("sends the typed value when the carried result is edited", async () => {
@@ -257,6 +269,14 @@ describe("keyboard", () => {
     await expectResult("= 0.333333333333");
     await user.type(expressionInput(), "*3{Enter}");
     await expectResult("0.333333333333 × 3 = 1");
+  });
+
+  it("puts a negative result in brackets when an operator is typed", async () => {
+    const user = await renderApp();
+    await user.type(expressionInput(), "-1.5*2{Enter}");
+    await expectResult("= −3");
+    await user.type(expressionInput(), "^2{Enter}");
+    await expectResult("(−3) ^ 2 = 9");
   });
 
   it("starts a new expression when a digit is typed after a result", async () => {

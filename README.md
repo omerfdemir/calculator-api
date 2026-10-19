@@ -11,7 +11,7 @@ The source of truth for behavior, the API contract and the tests is [SPEC.md](SP
 - 7 operations: add, subtract, multiply, divide, power, square root and percentage.
 - Expressions with more than 1 operator and with brackets, for example `(2 + 3) × 4 − 6 ÷ 3 = 18`.
 - A phone-style keypad. You can also type on the keyboard: Enter calculates, Escape clears, and Backspace deletes 1 character.
-- An operator after a result continues from the full result, not from the rounded display.
+- An operator after a result continues from the full result, not from the rounded display. A negative result goes in brackets: `−3`, then `^ 2`, gives `(−3) ^ 2 = 9`.
 - The `%` key works like a phone calculator: `15% × 80 = 12` and `80 + 15% = 92`.
 - Clear error messages for division by zero, the square root of a negative number, a result that is too large, a syntax error and an API that is not available.
 - The last 10 calculations in a history list.
@@ -128,8 +128,8 @@ There are 4 test levels. Each level tests through a public seam, as [SPEC.md](SP
 | Backend HTTP API | Real HTTP requests to the full router with `httptest` | `make test-backend` | 13 tests with 55 table rows |
 | Calculator module | The public `Evaluate` function and the registry list | `make test-backend` | 5 tests with 94 table rows |
 | Server entry point | `run` with a real server and the `healthcheck` subcommand | `make test-backend` | 4 tests |
-| Frontend | The full rendered app with MSW at the network boundary | `make test-frontend` | 69 tests |
-| End-to-end | Playwright against the Compose stack, with no mocks | `make up`, then `make e2e` | 24 tests |
+| Frontend | The full rendered app with MSW at the network boundary | `make test-frontend` | 71 tests |
+| End-to-end | Playwright against the Compose stack, with no mocks | `make up`, then `make e2e` | 25 tests |
 
 Other commands:
 

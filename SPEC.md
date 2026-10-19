@@ -48,7 +48,7 @@ Docker Compose runs the application as 2 services. The `api` service runs the Go
 16. As a user, I want an error message when the expression is empty, so that I know what to correct.
 17. As a user, I want a clear error message that shows the position of a syntax error (for example a missing bracket), so that I can correct the expression.
 18. As a user, I want to delete the last character, so that I can correct a typing error.
-19. As a user, I want to continue from the full last result when I press an operator, and to start a new expression when I press a digit, so that the keypad works like a phone calculator and does not lose precision (`1 ÷ 3`, then `× 3`, gives `1`).
+19. As a user, I want to continue from the full last result when I press an operator, and to start a new expression when I press a digit, so that the keypad works like a phone calculator and does not lose precision (`1 ÷ 3`, then `× 3`, gives `1`). A negative result continues in brackets (`−3`, then `^ 2`, gives `(−3) ^ 2 = 9`).
 20. As a user, I want the `=` key to stay disabled while a request runs, so that I do not send the same request 2 times.
 21. As a user, I want to see a loading state, so that I know the app is working.
 
@@ -238,7 +238,7 @@ The error codes are part of the public contract. The message text can change.
   The keypad shows an operation key only for an operation in the list from the API. An operation in the list that is not in this grid gets a key in an extra row after the grid. `EE` inserts `e` for exponent notation. Each key has an accessible name, for example "divide" and "square root".
 - **Expression input.** The display has 1 text input with a visible label. It uses `inputmode="none"`, so a phone does not open its own keyboard. A keypad key inserts its symbol at the end of the expression.
 - **Keyboard.** The user can type in the input. The input accepts only digits, `.`, `e`, `E`, the operation symbols, `(`, `)` and spaces. It ignores other characters. It shows `*`, `/` and `-` as `×`, `÷` and `−`. Enter calculates. Escape clears the expression, the result and the error. Backspace deletes 1 character.
-- **After a result.** An operation key or an operation character continues the expression from the result (for example the result `14`, then `×`, gives `14 ×`). A digit, `.`, `√` or `(` starts a new expression. The input shows the result as the display shows it, but the app sends the full `float64` value to the API. So `1 ÷ 3 = 0.333333333333`, then `× 3`, gives `0.333333333333 × 3 = 1`. The app sends the full value only while the expression still starts with the display text and no digit, `.` or `e` follows it. After another edit of the result, the app sends the expression as typed. The result line and the history show the display text, not the full value.
+- **After a result.** An operation key or an operation character continues the expression from the result (for example the result `14`, then `×`, gives `14 ×`). A digit, `.`, `√` or `(` starts a new expression. The input shows the result as the display shows it, but the app sends the full `float64` value to the API. A negative result goes in brackets, in the input and in the request, because `^` binds more tightly than unary minus: the result `−3`, then `^ 2`, gives `(−3) ^ 2 = 9`, not `−3 ^ 2 = −9`. So `1 ÷ 3 = 0.333333333333`, then `× 3`, gives `0.333333333333 × 3 = 1`. The app sends the full value only while the expression still starts with the display text and no digit, `.` or `e` follows it. After another edit of the result, the app sends the expression as typed. The result line and the history show the display text, not the full value.
 - The client-side validation is for user experience only. The API is the source of truth. The client checks only for an empty expression and filters the characters. The client does not parse the expression and does not check domain rules. These errors come from the API, so the frontend and the backend cannot disagree.
 - The display shows the result line as `<normalized expression> = <result>`, with the normalized expression from the API.
 - The display rounds a result to 12 significant digits and removes trailing zeros. The API returns the full `float64` value.
@@ -313,7 +313,7 @@ There are 4 seams. Each seam has a different job.
    - Each operation flow with the keypad.
    - A multi-operator expression and brackets.
    - Keyboard typing, the character filter and the `*`, `/`, `-` replacement.
-   - `⌫`, `AC`, and the rules after a result (operator continues from the full value, digit starts new, an edited result is sent as typed).
+   - `⌫`, `AC`, and the rules after a result (operator continues from the full value, a negative result goes in brackets, digit starts new, an edited result is sent as typed).
    - The keypad shows only the operations from the API.
    - The loading state and the disabled `=` key.
    - Each API error code shows the correct message, including the position for `INVALID_EXPRESSION`.
@@ -328,7 +328,7 @@ There are 4 seams. Each seam has a different job.
 4. **End-to-end (Playwright).** Playwright runs against the full Compose stack at `localhost:8080`. It uses no mocks. The tests cover these flows:
    - The page loads and shows a key for each of the 7 operations from the real API.
    - A happy path for each operation with the keypad.
-   - A multi-operator expression with brackets, a phone percentage (`80 + 15% = 92`), and a continuation from the full result (`1 ÷ 3`, then `× 3`, gives `1`).
+   - A multi-operator expression with brackets, a phone percentage (`80 + 15% = 92`), a continuation from the full result (`1 ÷ 3`, then `× 3`, gives `1`), and a negative result in brackets before a power (`−3`, then `^ 2`, gives `9`).
    - Division by zero, the square root of a negative number and a syntax error show the correct messages.
    - A keyboard-only flow.
    - A mobile viewport (360 × 800) has no horizontal scroll, and the main flow works.
