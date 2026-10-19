@@ -144,7 +144,7 @@ These rules apply to all operations:
 - `^` is right-associative: `2 ^ 3 ^ 2 = 2 ^ 9 = 512`.
 - Brackets `(` and `)` change the order of operations.
 - The API also accepts the ASCII symbols `*` for `×`, `/` for `÷` and `-` for `−`.
-- Spaces are allowed between tokens and have no meaning.
+- Spaces and tabs are allowed between tokens and have no meaning.
 - **Phone percentage rule.** `x%` is `x ÷ 100`. There is 1 exception: when the right operand of `+` or `−` is directly a `%` term, the percentage is of the left operand. So `a + b%` is `a + a × b ÷ 100`. Unary minus signs before the `%` term do not stop the rule, so `a + −b%` is `a − a × b ÷ 100`. Brackets stop the rule.
   - `50% = 0.5`
   - `15% × 80 = 12`
@@ -157,7 +157,7 @@ These rules apply to all operations:
   - `200 + 10% × 2 = 200.2` (the right operand of `+` is `10% × 2`, not a `%` term)
 - These are not allowed and give `INVALID_EXPRESSION`: implicit multiplication (`2(3)`, `2√9`), an empty expression, an unknown character, a missing operand, a bracket without a pair, and empty brackets `()`.
 - Limits: an expression has 200 characters at most, and brackets have a depth of 32 at most. A longer or deeper expression gives `INVALID_EXPRESSION`.
-- A position in an error is the 0-based index of a Unicode character (a code point) in the expression.
+- A position in an error is the 0-based index of a Unicode character (a code point) in the expression. For an opening bracket without a closing bracket, the position is the opening bracket.
 
 ### API contract
 
@@ -181,10 +181,10 @@ Error response (4xx):
 { "error": { "code": "DIVISION_BY_ZERO", "message": "cannot divide by zero" } }
 ```
 
-An `INVALID_EXPRESSION` error also has a `position` field:
+An `INVALID_EXPRESSION` error also has a `position` field. For the expression `2×(1+2`:
 
 ```json
-{ "error": { "code": "INVALID_EXPRESSION", "message": "missing closing bracket", "position": 6 } }
+{ "error": { "code": "INVALID_EXPRESSION", "message": "a closing bracket is missing", "position": 2 } }
 ```
 
 **`GET /api/v1/operations`** (200):
@@ -215,7 +215,7 @@ The error codes are part of the public contract. The message text can change.
 
 ### Frontend modules
 
-- **API client.** A typed `fetch` wrapper. It reads the base URL from `VITE_API_URL`. The default is the same origin. It stops a request after 5 seconds with `AbortController`. It returns a discriminated union: a success with the result, or a failure with an error code (and a position for `INVALID_EXPRESSION`). A network failure or a timeout becomes the code `NETWORK_ERROR`.
+- **API client.** A typed `fetch` wrapper. It reads the base URL from `VITE_API_URL`. The default is the same origin. It stops a request after 5 seconds with `AbortController`. It returns a discriminated union: a success with the result, or a failure with an error code (and a position for `INVALID_EXPRESSION`). A network failure or a timeout becomes the code `NETWORK_ERROR`. A 502, 503 or 504 response without the JSON error shape also becomes `NETWORK_ERROR`, because it comes from a proxy that cannot reach the API.
 - **Error messages.** One map from each error code to a user-friendly message. The UI never shows raw server text. The message for `INVALID_EXPRESSION` shows the 1-based character position.
 - **Calculator state hook.** It holds the expression, the status (`idle`, `loading`, `success`, `error`), the result and the history. It does the client-side validation and the phone keypad rules.
 - **Components.** Calculator (the container), display (the expression input and the result line), keypad, error message, and history list.
@@ -239,7 +239,7 @@ The error codes are part of the public contract. The message text can change.
 - **Expression input.** The display has 1 text input with a visible label. It uses `inputmode="none"`, so a phone does not open its own keyboard. A keypad key inserts its symbol at the end of the expression.
 - **Keyboard.** The user can type in the input. The input accepts only digits, `.`, `e`, `E`, the operation symbols, `(`, `)` and spaces. It ignores other characters. It shows `*`, `/` and `-` as `×`, `÷` and `−`. Enter calculates. Escape clears the expression, the result and the error. Backspace deletes 1 character.
 - **After a result.** An operation key or an operation character continues the expression from the result (for example the result `14`, then `×`, gives `14 ×`). A digit, `.`, `√` or `(` starts a new expression. The input shows the result as the display shows it, but the app sends the full `float64` value to the API. A negative result goes in brackets, in the input and in the request, because `^` binds more tightly than unary minus: the result `−3`, then `^ 2`, gives `(−3) ^ 2 = 9`, not `−3 ^ 2 = −9`. So `1 ÷ 3 = 0.333333333333`, then `× 3`, gives `0.333333333333 × 3 = 1`. The app sends the full value only while the expression still starts with the display text and no digit, `.` or `e` follows it. After another edit of the result, the app sends the expression as typed. The result line and the history show the display text, not the full value.
-- The client-side validation is for user experience only. The API is the source of truth. The client checks only for an empty expression and filters the characters. The client does not parse the expression and does not check domain rules. These errors come from the API, so the frontend and the backend cannot disagree.
+- The client-side validation is for user experience only. The API is the source of truth. The client checks only for an empty expression, filters the characters, and stops the input at 200 characters, the same limit as the API. The client does not parse the expression and does not check domain rules. These errors come from the API, so the frontend and the backend cannot disagree.
 - The display shows the result line as `<normalized expression> = <result>`, with the normalized expression from the API.
 - The display rounds a result to 12 significant digits and removes trailing zeros. The API returns the full `float64` value.
 - The `=` key and Enter do nothing while a request runs. The display shows a loading state.
