@@ -58,22 +58,35 @@ interface KeypadProps {
   onDelete: () => void;
 }
 
+interface KeyButtonProps {
+  className: string;
+  name: string;
+  label: string;
+  onClick: () => void;
+}
+
+function KeyButton({ className, name, label, onClick }: KeyButtonProps) {
+  return (
+    <button type="button" className={className} aria-label={name} onClick={onClick}>
+      {label}
+    </button>
+  );
+}
+
 export function Keypad({ operations, loading, onInsert, onClear, onDelete }: KeypadProps) {
   const byName = new Map(operations.map((op) => [op.name, op]));
   const extra = operations.filter((op) => !gridOperations.has(op.name));
 
   const operationKey = (op: Operation) => (
-    <button
+    <KeyButton
       key={op.name}
-      type="button"
       className="key key-operation"
-      aria-label={operationNames[op.name] ?? op.name}
+      name={operationNames[op.name] ?? op.name}
+      label={op.symbol}
       onClick={() => {
         onInsert(op.symbol);
       }}
-    >
-      {op.symbol}
-    </button>
+    />
   );
 
   return (
@@ -90,29 +103,25 @@ export function Keypad({ operations, loading, onInsert, onClear, onDelete }: Key
           }
           case "insert":
             return (
-              <button
+              <KeyButton
                 key={index}
-                type="button"
                 className="key"
-                aria-label={cell.name}
+                name={cell.name}
+                label={cell.label}
                 onClick={() => {
                   onInsert(cell.text);
                 }}
-              >
-                {cell.label}
-              </button>
+              />
             );
           case "action":
             return (
-              <button
+              <KeyButton
                 key={index}
-                type="button"
                 className="key key-function"
-                aria-label={cell.name}
+                name={cell.name}
+                label={cell.label}
                 onClick={cell.action === "clear" ? onClear : onDelete}
-              >
-                {cell.label}
-              </button>
+              />
             );
         }
       })}
