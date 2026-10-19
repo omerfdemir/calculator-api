@@ -28,7 +28,7 @@ func (n *negateNode) eval() (float64, error) {
 	return -value, err
 }
 
-func (n *negateNode) String() string { return "−" + n.operand.String() }
+func (n *negateNode) String() string { return symbolMinus + n.operand.String() }
 
 // unaryNode is a prefix or a postfix operation.
 type unaryNode struct {
@@ -77,7 +77,7 @@ func (n *binaryNode) eval() (float64, error) {
 // isPercentOfLeft reports whether the right operand of + or − is directly a
 // % term, with or without unary minus signs before it (80 + −15%).
 func (n *binaryNode) isPercentOfLeft() bool {
-	if n.op.Name != "add" && n.op.Name != "subtract" {
+	if n.op.Name != nameAdd && n.op.Name != nameSubtract {
 		return false
 	}
 	right := n.right
@@ -89,7 +89,7 @@ func (n *binaryNode) isPercentOfLeft() bool {
 		right = negate.operand
 	}
 	percent, ok := right.(*unaryNode)
-	return ok && percent.op.Name == "percentage"
+	return ok && percent.op.Name == namePercentage
 }
 
 func (n *binaryNode) String() string {

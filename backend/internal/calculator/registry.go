@@ -26,6 +26,15 @@ type Operation struct {
 	apply            func(operands ...float64) (float64, error)
 }
 
+// The operation names and the symbol that the lexer, the parser and the
+// evaluator refer to directly.
+const (
+	nameAdd        = "add"
+	nameSubtract   = "subtract"
+	namePercentage = "percentage"
+	symbolMinus    = "−"
+)
+
 // unaryMinusPrecedence is the precedence of unary minus. It is a syntax rule,
 // not an operation, so it is not in the registry.
 const unaryMinusPrecedence = 3
@@ -33,16 +42,16 @@ const unaryMinusPrecedence = 3
 // registry holds the operations in the fixed list order. To add an operation,
 // add 1 entry.
 var registry = []Operation{
-	{Name: "add", Symbol: "+", Notation: Infix, Arity: 2, Precedence: 1,
+	{Name: nameAdd, Symbol: "+", Notation: Infix, Arity: 2, Precedence: 1,
 		apply: func(x ...float64) (float64, error) { return x[0] + x[1], nil }},
-	{Name: "subtract", Symbol: "−", Notation: Infix, Arity: 2, Precedence: 1,
+	{Name: nameSubtract, Symbol: symbolMinus, Notation: Infix, Arity: 2, Precedence: 1,
 		apply: func(x ...float64) (float64, error) { return x[0] - x[1], nil }},
 	{Name: "multiply", Symbol: "×", Notation: Infix, Arity: 2, Precedence: 2,
 		apply: func(x ...float64) (float64, error) { return x[0] * x[1], nil }},
 	{Name: "divide", Symbol: "÷", Notation: Infix, Arity: 2, Precedence: 2, apply: divide},
 	{Name: "power", Symbol: "^", Notation: Infix, Arity: 2, Precedence: 4, RightAssociative: true, apply: power},
 	{Name: "sqrt", Symbol: "√", Notation: Prefix, Arity: 1, Precedence: 3, apply: sqrt},
-	{Name: "percentage", Symbol: "%", Notation: Postfix, Arity: 1, Precedence: 5,
+	{Name: namePercentage, Symbol: "%", Notation: Postfix, Arity: 1, Precedence: 5,
 		apply: func(x ...float64) (float64, error) { return x[0] / 100, nil }},
 }
 

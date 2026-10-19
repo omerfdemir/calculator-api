@@ -25,7 +25,7 @@ type token struct {
 }
 
 // asciiSymbols maps the ASCII symbols that the API also accepts.
-var asciiSymbols = map[rune]string{'*': "×", '/': "÷", '-': "−"}
+var asciiSymbols = map[rune]string{'*': "×", '/': "÷", '-': symbolMinus}
 
 func lex(expression string) ([]token, error) {
 	runes := []rune(expression)
@@ -97,7 +97,7 @@ func lexNumber(runes []rune, start int) (token, int, error) {
 	}
 
 	text := string(runes[start:i])
-	value, err := strconv.ParseFloat(strings.ReplaceAll(text, "−", "-"), 64)
+	value, err := strconv.ParseFloat(strings.ReplaceAll(text, symbolMinus, "-"), 64)
 	if err != nil && !errors.Is(err, strconv.ErrRange) {
 		return token{}, 0, syntaxError(start, "a number is not valid")
 	}

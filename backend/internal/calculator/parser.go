@@ -77,7 +77,7 @@ func (p *parser) operand() (node, error) {
 	case tokenOpenBracket:
 		return p.group(tok)
 	case tokenSymbol:
-		if tok.text == "−" {
+		if tok.text == symbolMinus {
 			operand, err := p.expression(unaryMinusPrecedence)
 			if err != nil {
 				return nil, err
